@@ -1,0 +1,160 @@
+# OMNISENSE Multi-Camera Spatial Intelligence Platform
+# Default Configuration File
+
+config_version: "1.0.0"
+profile_name: "default"
+
+# Directory paths
+models_dir: "models"
+data_dir: "data"
+calibration_dir: "configs/calibration"
+logs_dir: "logs"
+
+# Camera Configuration
+# Four USB cameras with V4L2 backend
+cameras:
+  0:
+    camera_id: 0
+    device_path: "/dev/video0"
+    name: "ACER HD Camera"
+    resolution: [640, 480]
+    fps: 30
+    backend: "v4l2"
+    calibration_file: "configs/calibration/camera_0.yaml"
+    enabled: true
+
+  1:
+    camera_id: 1
+    device_path: "/dev/video2"
+    name: "External UVC Camera 1"
+    resolution: [640, 480]
+    fps: 30
+    backend: "v4l2"
+    calibration_file: "configs/calibration/camera_1.yaml"
+    enabled: true
+
+  2:
+    camera_id: 2
+    device_path: "/dev/video4"
+    name: "External UVC Camera 2"
+    resolution: [640, 480]
+    fps: 30
+    backend: "v4l2"
+    calibration_file: "configs/calibration/camera_2.yaml"
+    enabled: true
+
+  3:
+    camera_id: 3
+    device_path: "/dev/video6"
+    name: "C270 HD Webcam"
+    resolution: [640, 480]
+    fps: 30
+    backend: "v4l2"
+    calibration_file: "configs/calibration/camera_3.yaml"
+    enabled: true
+
+# Visual SLAM Configuration
+slam:
+  enabled: true
+  stereo_camera_pair: [1, 2]  # Use cameras 1 and 2 for stereo SLAM
+  orb_features: 2000
+  scale_factor: 1.2
+  n_levels: 8
+  loop_closure_enabled: true
+  relocalization_enabled: true
+  map_save_path: "data/maps"
+
+# Person Detection and Tracking
+tracking:
+  enabled: true
+  yolo_model: "yolov8n.pt"  # Options: yolov8n, yolov8s, yolov8m, yolov8l, yolov9
+  detection_confidence: 0.5
+  nms_threshold: 0.4
+  tracker_type: "deep_sort"
+  max_age: 70  # Frames to keep track alive without detection
+  min_hits: 3  # Minimum detections before track is confirmed
+  iou_threshold: 0.3
+  reid_model: "osnet_x1_0"  # Person re-identification model
+  reid_confidence: 0.6
+
+# Human State Analysis (Face, Pose, Gaze, Drowsiness)
+perception:
+  enabled: true
+  face_detection_enabled: true
+  pose_estimation_enabled: true
+  gaze_estimation_enabled: true
+  drowsiness_detection_enabled: true
+  mediapipe_model_complexity: 1  # 0=lite, 1=full, 2=heavy
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+  gaze_model: "eth_xgaze"
+  perclos_window_seconds: 60.0  # Window for drowsiness calculation
+  drowsiness_threshold: 0.3  # PERCLOS threshold
+
+# Sensor Fusion
+fusion:
+  enabled: true
+  kalman_filter_enabled: true
+  process_noise: 0.01
+  measurement_noise: 0.1
+  triangulation_min_views: 2
+  triangulation_max_reprojection_error: 5.0  # pixels
+  temporal_smoothing_alpha: 0.3
+
+# Intelligence and Reasoning Layer
+intelligence:
+  activity_recognition_enabled: true
+  anomaly_detection_enabled: true
+  interaction_detection_enabled: true
+  risk_assessment_enabled: true
+  attention_heatmap_enabled: true
+  zone_detection_enabled: true
+
+# Database Configuration (PostgreSQL + TimescaleDB)
+database:
+  enabled: true
+  host: "localhost"
+  port: 5432
+  database: "omnisense"
+  user: "omnisense"
+  password: ""  # Set via environment variable OMNISENSE_DB_PASSWORD
+  pool_size: 10
+  max_overflow: 20
+  retention_days: 30  # Auto-delete data older than this
+
+# API and External Interfaces
+api:
+  rest_api_enabled: true
+  rest_api_host: "0.0.0.0"
+  rest_api_port: 8000
+  websocket_enabled: true
+  websocket_port: 8001
+  ros2_enabled: false  # Requires ROS2 installation
+  mqtt_enabled: false
+  mqtt_broker: "localhost"
+  mqtt_port: 1883
+  jwt_secret: "change_this_in_production"  # Set via environment variable
+  jwt_expiration_hours: 24
+
+# GUI Configuration (PyQt6)
+gui:
+  enabled: true
+  window_width: 1920
+  window_height: 1080
+  fullscreen: false
+  theme: "dark"  # Options: dark, light
+  show_fps: true
+  show_diagnostics: true
+  camera_grid_layout: [2, 2]  # 2x2 grid for 4 cameras
+  visualization_3d_enabled: true
+
+# Performance and Optimization
+performance:
+  gpu_enabled: true
+  gpu_device_id: 0
+  num_threads: 4
+  batch_size: 1  # Increase for higher throughput at cost of latency
+  inference_precision: "fp16"  # Options: fp32, fp16, int8
+  frame_skip_enabled: false  # Skip frames if processing falls behind
+  adaptive_processing: true  # Dynamically adjust processing based on load
+  max_queue_size: 10  # Maximum frames buffered per camera
