@@ -96,6 +96,20 @@ class Camera:
             # Configure camera
             self._configure_camera()
 
+            # Test read a frame to ensure camera is actually working
+            logger.info(f"Testing camera {self.camera_id}...")
+            ret, frame = self.cap.read()
+            if not ret or frame is None:
+                logger.warning(
+                    f"Camera {self.camera_id} opened but cannot read frames. "
+                    f"This camera may not work properly."
+                )
+            else:
+                logger.info(
+                    f"Camera {self.camera_id} test successful - "
+                    f"captured {frame.shape[1]}x{frame.shape[0]} frame"
+                )
+
             logger.info(f"Camera {self.camera_id} opened successfully")
 
         except Exception as e:
@@ -159,14 +173,45 @@ class Camera:
         """Main capture loop running in background thread."""
         logger.info(f"Capture loop started for camera {self.camera_id}")
 
+        consecutive_failures = 0
+        max_consecutive_failures = 100  # Auto-disable after 100 failures
+        last_error_log_time = 0
+        error_log_interval = 5.0  # Only log errors every 5 seconds
+
         while self.is_running:
             try:
                 ret, frame = self.cap.read()
 
                 if not ret:
-                    logger.error(f"Failed to read frame from camera {self.camera_id}")
+                    consecutive_failures += 1
+
+                    # Rate-limited error logging
+                    current_time = time.time()
+                    if current_time - last_error_log_time >= error_log_interval:
+                        logger.error(
+                            f"Failed to read frame from camera {self.camera_id} "
+                            f"({consecutive_failures} consecutive failures)"
+                        )
+                        last_error_log_time = current_time
+
+                    # Auto-disable camera after too many failures
+                    if consecutive_failures >= max_consecutive_failures:
+                        logger.error(
+                            f"Camera {self.camera_id} has failed {consecutive_failures} times. "
+                            f"Stopping capture thread."
+                        )
+                        self.is_running = False
+                        break
+
                     time.sleep(0.01)
                     continue
+
+                # Reset failure counter on success
+                if consecutive_failures > 0:
+                    logger.info(
+                        f"Camera {self.camera_id} recovered after {consecutive_failures} failures"
+                    )
+                    consecutive_failures = 0
 
                 timestamp = time.time()
                 self.frame_count += 1
