@@ -67,7 +67,7 @@ slam:
 # Person Detection and Tracking
 tracking:
   enabled: true
-  yolo_model: "yolov8n.pt"  # Options: yolov8n, yolov8s, yolov8m, yolov8l, yolov9
+  yolo_model: "yolov8n"  # Options: yolov8n, yolov8s, yolov8m, yolov8l, yolov9 (with or without .pt)
   detection_confidence: 0.5
   nms_threshold: 0.4
   tracker_type: "deep_sort"

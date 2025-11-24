@@ -147,7 +147,7 @@ class ModelManager:
         Load YOLO model for object detection.
 
         Args:
-            model_name: YOLO model variant (yolov8n, yolov8s, etc.)
+            model_name: YOLO model variant (yolov8n, yolov8s, yolov8n.pt, etc.)
             device: Device to load model on ('cuda' or 'cpu')
 
         Returns:
@@ -156,22 +156,33 @@ class ModelManager:
         Raises:
             ModelLoadError: If model fails to load
         """
-        cache_key = f"yolo_{model_name}"
+        # Strip .pt extension if provided
+        model_name_clean = model_name.replace('.pt', '')
+
+        cache_key = f"yolo_{model_name_clean}"
 
         if cache_key in self.loaded_models:
-            logger.debug(f"Returning cached YOLO model: {model_name}")
+            logger.debug(f"Returning cached YOLO model: {model_name_clean}")
             return self.loaded_models[cache_key]
 
         try:
             from ultralytics import YOLO
 
-            # Ensure model is downloaded
-            model_path = self.yolo_dir / f"{model_name}.pt"
+            # Check if model exists locally
+            model_path = self.yolo_dir / f"{model_name_clean}.pt"
+
             if not model_path.exists():
-                model_path = self.download_model(model_name)
+                # Try to download from our URLs first
+                if model_name_clean in self.MODEL_URLS:
+                    logger.info(f"Downloading {model_name_clean} from configured URL...")
+                    model_path = self.download_model(model_name_clean)
+                else:
+                    # Let ultralytics download it (will download to default location)
+                    logger.info(f"Model {model_name_clean} not found locally, letting ultralytics download it...")
+                    model_path = model_name_clean  # Just pass the model name, ultralytics will handle it
 
             # Load model
-            logger.info(f"Loading YOLO model: {model_name}")
+            logger.info(f"Loading YOLO model: {model_name_clean}")
             model = YOLO(str(model_path))
 
             # Set device
@@ -181,12 +192,12 @@ class ModelManager:
             model.to(device)
 
             self.loaded_models[cache_key] = model
-            logger.info(f"YOLO model {model_name} loaded on {device}")
+            logger.info(f"YOLO model {model_name_clean} loaded on {device}")
 
             return model
 
         except Exception as e:
-            raise ModelLoadError(f"Failed to load YOLO model {model_name}: {e}")
+            raise ModelLoadError(f"Failed to load YOLO model {model_name_clean}: {e}")
 
     def load_mediapipe_face_mesh(self):
         """
