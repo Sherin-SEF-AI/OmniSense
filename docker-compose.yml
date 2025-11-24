@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database with TimescaleDB
+  database:
+    image: timescale/timescaledb:latest-pg14
+    container_name: omnisense_database
+    environment:
+      POSTGRES_DB: omnisense
+      POSTGRES_USER: omnisense
+      POSTGRES_PASSWORD: ${OMNISENSE_DB_PASSWORD:-omnisense_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - omnisense_db_data:/var/lib/postgresql/data
+    networks:
+      - omnisense_network
+    restart: unless-stopped
+
+  # OMNISENSE application
+  omnisense:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omnisense_app
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - DISPLAY=${DISPLAY}
+      - OMNISENSE_DB_PASSWORD=${OMNISENSE_DB_PASSWORD:-omnisense_password}
+    depends_on:
+      - database
+    ports:
+      - "8000:8000"  # REST API
+      - "8001:8001"  # WebSocket
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./configs:/app/configs
+      - /dev/video0:/dev/video0  # Camera 0
+      - /dev/video2:/dev/video2  # Camera 1
+      - /dev/video4:/dev/video4  # Camera 2
+      - /dev/video6:/dev/video6  # Camera 3
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/video2:/dev/video2
+      - /dev/video4:/dev/video4
+      - /dev/video6:/dev/video6
+    networks:
+      - omnisense_network
+    restart: unless-stopped
+    privileged: true  # Required for camera access
+
+  # Optional: MQTT broker for IoT integration
+  mqtt:
+    image: eclipse-mosquitto:latest
+    container_name: omnisense_mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - omnisense_mqtt_data:/mosquitto/data
+      - omnisense_mqtt_logs:/mosquitto/log
+    networks:
+      - omnisense_network
+    restart: unless-stopped
+    profiles:
+      - mqtt
+
+networks:
+  omnisense_network:
+    driver: bridge
+
+volumes:
+  omnisense_db_data:
+  omnisense_mqtt_data:
+  omnisense_mqtt_logs:

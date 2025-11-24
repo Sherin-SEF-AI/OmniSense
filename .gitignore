@@ -1,0 +1,105 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# Models
+models/yolo/*.pt
+models/reid/*.pth
+models/gaze/*.pt
+models/slam/*
+
+# Data
+data/recordings/*.mp4
+data/recordings/*.avi
+data/calibration/*.jpg
+data/calibration/*.png
+data/maps/*.map
+*.bag
+
+# Logs
+logs/*.log
+logs/*.log.*
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Calibration data (keep templates)
+configs/calibration/*.yaml
+!configs/calibration/template.yaml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker
+.docker/
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
+# Distribution
+*.tar.gz
+*.zip
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Large files
+*.h5
+*.hdf5
+*.pb
+*.onnx
+!models/README.md
