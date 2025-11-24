@@ -248,10 +248,10 @@ class ConfigManager:
         cameras = {}
         if 'cameras' in config_dict:
             for cam_id, cam_cfg in config_dict['cameras'].items():
-                cameras[int(cam_id)] = CameraConfig(
-                    camera_id=int(cam_id),
-                    **cam_cfg
-                )
+                # Ensure camera_id matches the key
+                cam_cfg_copy = cam_cfg.copy()
+                cam_cfg_copy['camera_id'] = int(cam_id)
+                cameras[int(cam_id)] = CameraConfig(**cam_cfg_copy)
 
         # Parse other modules
         slam = SLAMConfig(**config_dict.get('slam', {}))
