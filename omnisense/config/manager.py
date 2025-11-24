@@ -113,9 +113,9 @@ class DatabaseConfig:
 @dataclass
 class APIConfig:
     """Configuration for API services."""
-    rest_api_enabled: bool = True
-    rest_api_host: str = "0.0.0.0"
-    rest_api_port: int = 8000
+    enabled: bool = True
+    host: str = "0.0.0.0"
+    port: int = 8000
     websocket_enabled: bool = True
     websocket_port: int = 8001
     ros2_enabled: bool = False
