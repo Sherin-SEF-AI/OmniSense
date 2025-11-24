@@ -24,8 +24,12 @@ from omnisense.perception.pose import PoseEstimator
 from omnisense.perception.drowsiness import DrowsinessDetector
 from omnisense.fusion.world_state import SensorFusion
 from omnisense.database.schema import DatabaseManager
+from omnisense.api.rest_api import OmniSenseAPI
 from omnisense.utils.logger import setup_logger, get_logger
 from omnisense.utils.exceptions import OmniSenseError
+import threading
+import time
+import uvicorn
 
 logger = get_logger(__name__)
 
@@ -65,10 +69,13 @@ class OmniSenseApplication:
         self.drowsiness_detector: Optional[DrowsinessDetector] = None
         self.sensor_fusion: Optional[SensorFusion] = None
         self.database: Optional[DatabaseManager] = None
+        self.api: Optional[OmniSenseAPI] = None
+        self.api_server_thread: Optional[threading.Thread] = None
         self.qt_app: Optional[QApplication] = None
         self.main_window = None
 
         self.is_running = False
+        self.start_time = time.time()
 
     def initialize(self):
         """Initialize all system components."""
@@ -185,6 +192,12 @@ class OmniSenseApplication:
                     self.config.database.enabled = False
                     self.database = None
 
+            # Initialize API
+            if self.config.api.enabled:
+                logger.info("Initializing REST API...")
+                self.api = OmniSenseAPI(self)
+                logger.info(f"REST API will be available at http://{self.config.api.host}:{self.config.api.port}")
+
             # Initialize GUI
             if self.config.gui.enabled:
                 logger.info("Initializing GUI...")
@@ -215,6 +228,10 @@ class OmniSenseApplication:
             if self.frame_synchronizer:
                 self.frame_synchronizer.start()
 
+            # Start API server in background thread
+            if self.api:
+                self._start_api_server()
+
             self.is_running = True
 
             # Show GUI and enter event loop
@@ -231,6 +248,20 @@ class OmniSenseApplication:
             logger.error(f"Error during execution: {e}", exc_info=True)
         finally:
             self.shutdown()
+
+    def _start_api_server(self):
+        """Start FastAPI server in background thread."""
+        def run_server():
+            uvicorn.run(
+                self.api.get_app(),
+                host=self.config.api.host,
+                port=self.config.api.port,
+                log_level="info"
+            )
+
+        self.api_server_thread = threading.Thread(target=run_server, daemon=True)
+        self.api_server_thread.start()
+        logger.info(f"API server started at http://{self.config.api.host}:{self.config.api.port}")
 
     def _run_headless(self):
         """Run in headless mode without GUI."""
