@@ -145,21 +145,45 @@ class OmniSenseApplication:
 
             # Initialize database
             if self.config.database.enabled:
-                logger.info("Initializing database...")
-                db_url = (
-                    f"postgresql://{self.config.database.user}:"
-                    f"{self.config.database.password}@"
-                    f"{self.config.database.host}:{self.config.database.port}/"
-                    f"{self.config.database.database}"
-                )
-
-                self.database = DatabaseManager(db_url)
-                self.database.create_tables()
-
                 try:
-                    self.database.create_hypertables()
+                    logger.info("Initializing database...")
+
+                    # Get password from environment variable if not in config
+                    import os
+                    db_password = self.config.database.password
+                    if not db_password:
+                        db_password = os.getenv('OMNISENSE_DB_PASSWORD', '')
+
+                    if not db_password:
+                        logger.warning(
+                            "No database password configured. "
+                            "Set OMNISENSE_DB_PASSWORD environment variable or disable database in config."
+                        )
+                        logger.info("Continuing without database...")
+                        self.config.database.enabled = False
+                    else:
+                        db_url = (
+                            f"postgresql://{self.config.database.user}:"
+                            f"{db_password}@"
+                            f"{self.config.database.host}:{self.config.database.port}/"
+                            f"{self.config.database.database}"
+                        )
+
+                        self.database = DatabaseManager(db_url)
+                        self.database.create_tables()
+
+                        try:
+                            self.database.create_hypertables()
+                        except Exception as e:
+                            logger.warning(f"TimescaleDB not available: {e}")
+
+                        logger.info("Database initialized successfully")
+
                 except Exception as e:
-                    logger.warning(f"TimescaleDB not available: {e}")
+                    logger.error(f"Database initialization failed: {e}")
+                    logger.warning("Continuing without database...")
+                    self.config.database.enabled = False
+                    self.database = None
 
             # Initialize GUI
             if self.config.gui.enabled:

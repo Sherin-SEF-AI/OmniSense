@@ -111,8 +111,9 @@ intelligence:
   zone_detection_enabled: true
 
 # Database Configuration (PostgreSQL + TimescaleDB)
+# Note: Database is OPTIONAL. Disable if not needed or not configured.
 database:
-  enabled: true
+  enabled: false  # Set to true to enable database logging (requires PostgreSQL setup)
   host: "localhost"
   port: 5432
   database: "omnisense"
